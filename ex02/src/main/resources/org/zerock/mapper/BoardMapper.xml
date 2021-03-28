@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.BoardMapper">
+	
+	<select id="getList" resultType="org.zerock.domain.BoardVO">
+	<![CDATA[
+		select * from springex.tbl_board where bno > 0
+	]]>	
+	</select>
+
+	<select id="getListWithPaging" resultType="org.zerock.domain.BoardVO">
+		SELECT (@R:=@R+1) rn, tbl.bno, tbl.title, tbl.content, tbl.writer, tbl.regdate, tbl.updatedate
+		FROM springex.tbl_board tbl, (SELECT @R:=#{skipCount}) R
+		<trim prefix="WHERE (" suffix=") " prefixOverrides="OR">
+			<foreach item='type' collection="typeArr">
+				<trim prefix = "OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							tbl.title LIKE CONCAT('%',#{keyword},'%')
+						</when>
+						<when test="type == 'C'.toString()">
+							tbl.content LIKE CONCAT('%',#{keyword},'%')
+						</when>
+						<when test="type == 'W'.toString()">
+							tbl.writer LIKE CONCAT('%',#{keyword},'%')
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+		ORDER BY bno DESC
+		LIMIT #{skipCount}, #{amount};
+	</select>
+
+	<insert id="insert">
+		insert into springex.tbl_board (bno, title, content, writer)
+		values (nextval(springex.seq_board), #{title}, #{content}, #{writer})
+	</insert>
+	
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="bno" order="BEFORE" resultType="long">
+			select nextval(springex.seq_board) from dual
+		</selectKey>
+		insert into springex.tbl_board (bno, title, content, writer) values (#{bno}, #{title}, #{content}, #{writer})
+	</insert>
+	
+	<select id="read" resultType="org.zerock.domain.BoardVO">
+		select * from springex.tbl_board where bno = #{bno}
+	</select>
+	
+	<delete id="delete">
+		delete from springex.tbl_board where bno = #{bno}
+	</delete>
+
+	<update id="update">
+		update springex.tbl_board
+		set title= #{title},
+		content= #{content},
+		writer = #{writer},
+		updatedate = NOW()
+		where bno = #{bno}
+	</update>	
+	
+	<select id="getTotalCount" resultType="int">
+		select count(*) from springex.tbl_board tbl
+		where
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+			<foreach item='type' collection="typeArr">
+				<trim prefix = "OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							tbl.title LIKE CONCAT('%',#{keyword},'%')
+						</when>
+						<when test="type == 'C'.toString()">
+							tbl.content LIKE CONCAT('%',#{keyword},'%')
+						</when>
+						<when test="type == 'W'.toString()">
+							tbl.writer LIKE CONCAT('%',#{keyword},'%')
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+		bno > 0
+	</select>
+</mapper>
